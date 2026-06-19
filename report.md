@@ -90,12 +90,12 @@ docker compose run publisher python publisher.py --count 25000 --dup-rate 0.35
 | Total event dikirim       | [25000]        |
 | Event unik (estimasi)     | [16213]        |
 | Event duplikat (estimasi) | [8787]         |
-| `unique_processed` (stats)| [16213]          |
-| `duplicate_dropped` (stats)| [8787]         |
-| Durasi total (detik)      | [10.55]          |
-| Throughput (event/detik)  | [2370]          |
-| Latency p50               | [20] |
-| Latency p95               | [38] |
+| `unique_processed` (stats)| [16213]        |
+| `duplicate_dropped` (stats)| [8787]        |
+| Durasi total (detik)      | [10.55]        |
+| Throughput (event/detik)  | [2370]         |
+| Latency p50               | [20]           |
+| Latency p95               | [38]           |
 
 ---
 
@@ -107,11 +107,11 @@ docker compose run publisher python publisher.py --count 25000 --dup-rate 0.35
 pytest tests/ -v -m "not integration"
 ```
 
-| Test                                     | Status  | Keterangan                       |
-|------------------------------------------|---------|----------------------------------|
-| `test_concurrent_insert_same_event`      | [PASS] | 10 tasks, same ID → 1 unique |
-| `test_concurrent_insert_different_events`| [PASS] | 10 tasks, diff IDs → 10 unique |
-| `test_stats_consistency_under_load`      | [PASS] | 100 events, invariant check  |
+| Test                                     | Status  | Keterangan                     |
+|------------------------------------------|---------|--------------------------------|
+| `test_concurrent_insert_same_event`      | [PASS]  | 10 tasks, same ID → 1 unique   |
+| `test_concurrent_insert_different_events`| [PASS]  | 10 tasks, diff IDs → 10 unique |
+| `test_stats_consistency_under_load`      | [PASS]  | 100 events, invariant check    |
 
 ---
 
