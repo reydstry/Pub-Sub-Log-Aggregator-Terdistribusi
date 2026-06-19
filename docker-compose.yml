@@ -1,0 +1,99 @@
+# ================================================================
+#  Pub-Sub Log Aggregator Terdistribusi — Docker Compose
+# ================================================================
+#  Desain: semua service dalam jaringan internal Compose.
+#  Hanya aggregator yang expose port ke host (8080).
+#  broker & storage tidak punya port mapping → isolasi penuh.
+#  Health-check memastikan depends_on menunggu service benar-benar siap.
+# ================================================================
+
+services:
+
+  # ── Redis 7 — Message Broker (internal only) ──────────────────
+  broker:
+    image: redis:7-alpine
+    container_name: pubsub-broker
+    # Tidak ada `ports:` → hanya bisa diakses dari dalam jaringan Compose
+    volumes:
+      - broker_data:/data          # Persistensi AOF/RDB Redis
+    networks:
+      - pubsub-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ── PostgreSQL 16 — Persistent Storage (internal only) ────────
+  storage:
+    image: postgres:16-alpine
+    container_name: pubsub-storage
+    environment:
+      POSTGRES_DB: logdb
+      POSTGRES_USER: aggregator
+      POSTGRES_PASSWORD: aggregator_pass
+    # Tidak ada `ports:` → hanya bisa diakses dari dalam jaringan Compose
+    volumes:
+      - pg_data:/var/lib/postgresql/data   # Data tetap ada walau container dihapus
+    networks:
+      - pubsub-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aggregator -d logdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Aggregator — FastAPI + Consumer Workers ───────────────────
+  aggregator:
+    build:
+      context: ./aggregator
+      dockerfile: Dockerfile
+    container_name: pubsub-aggregator
+    ports:
+      - "8080:8080"               # Satu-satunya port yang di-expose ke host
+    environment:
+      DATABASE_URL: "postgresql://aggregator:aggregator_pass@storage:5432/logdb"
+      REDIS_URL: "redis://broker:6379/0"
+      QUEUE_KEY: "event_queue"
+      NUM_WORKERS: "3"
+    depends_on:
+      broker:
+        condition: service_healthy   # Tunggu Redis PING berhasil
+      storage:
+        condition: service_healthy   # Tunggu pg_isready OK
+    networks:
+      - pubsub-net
+    restart: unless-stopped
+
+  # ── Publisher — Simulator Event (one-shot) ────────────────────
+  publisher:
+    build:
+      context: ./publisher
+      dockerfile: Dockerfile
+    container_name: pubsub-publisher
+    environment:
+      AGGREGATOR_URL: "http://aggregator:8080"
+    depends_on:
+      aggregator:
+        condition: service_started
+    networks:
+      - pubsub-net
+    restart: "no"                  # One-shot: jalankan sekali lalu exit
+    profiles:
+      - "manual"                   # Tidak jalan otomatis saat `docker compose up`
+
+# ── Named Volumes ──────────────────────────────────────────────
+volumes:
+  pg_data:
+    driver: local
+  broker_data:
+    driver: local
+
+# ── Network Internal ───────────────────────────────────────────
+networks:
+  pubsub-net:
+    driver: bridge

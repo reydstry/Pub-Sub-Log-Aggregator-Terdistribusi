@@ -1,0 +1,6 @@
+# Desain: httpx dipilih karena mendukung async (httpx.AsyncClient)
+# serta API modern yang lebih konsisten dibanding requests.
+# asyncio adalah stdlib, tidak perlu di-install.
+# python-ulid untuk generate event_id yang time-sortable.
+httpx==0.28.1
+python-ulid==3.0.0
