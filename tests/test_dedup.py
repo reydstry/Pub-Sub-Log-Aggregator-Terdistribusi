@@ -1,6 +1,6 @@
 import pytest
 import uuid
-from database import insert_event, get_stats
+from aggregator import insert_event, get_stats
 
 @pytest.mark.asyncio
 async def test_duplicate_not_reprocessed(mock_pool, sample_event):

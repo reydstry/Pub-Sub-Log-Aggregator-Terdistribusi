@@ -6,3 +6,6 @@ asyncpg==0.30.0
 redis[asyncio]==5.2.1
 pydantic==2.10.4
 python-ulid==3.0.0
+pytest
+pytest-asyncio
+httpx

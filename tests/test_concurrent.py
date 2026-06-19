@@ -3,7 +3,7 @@ import uuid
 import pytest
 import random
 from datetime import datetime, timezone
-from database import insert_event, get_stats
+from aggregator import insert_event, get_stats
 
 @pytest.mark.asyncio
 async def test_concurrent_insert_same_event(mock_pool):
